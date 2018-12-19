@@ -1,41 +1,155 @@
-var width = document.body.offsetWidth;
-var edgeThickness = 54, vertexThickness = 10;
+let width = document.getElementById("chart").offsetWidth;
+let edgeThickness = 54, vertexThickness = 10;
 // global circle
-var circos = new Circos({
+let circos = new Circos({
     container: '#chart',
     width: width,
     height: width
 });
+let q = d3.queue();
+let names = getNames();
+let colors = {
+    "yellow" : "#ffe066",
+    "darkBlue" : '#3b5998',
+    "lightBlue" : '#8b9dc3',
+    "darkGray" : '#abafbd',
+    "lightGray" : '#dddfe6',
+    "veryDarkBlue" : '#27385d'
+}
 
+// buttons
 document.getElementById("btn").onclick = function(e) {
-    let img = document.createElement("img");
-    img.setAttribute("src", svg2img());
-    document.body.appendChild(img);
+    let downloader = document.createElement("a");
+    downloader.setAttribute("href", svg2img());
+    downloader.setAttribute("download", true);
+    document.body.appendChild(downloader);
+    downloader.click();
+}
+
+document.getElementById("btn-back").onclick = function(e) {
+    changeYellow(true);
+    changeDarkBlue(true);
+    changeDarkGray(true);
+    changeLightBlue(true);
+    changeLightGray(true);
+
+    redraw();
+}
+
+document.getElementById("btn-edge").onclick = function(e) {
+    changeYellow(false);
+    changeDarkBlue(false);
+    changeDarkGray(false);
+    changeLightBlue(true);
+    changeLightGray(true);
+
+    redraw();
+}
+
+document.getElementById("btn-vertex").onclick = function(e) {
+    changeYellow(false);
+    changeDarkBlue(true);
+    changeDarkGray(true);
+    changeLightBlue(false);
+    changeLightGray(false);
+    
+    redraw();
+}
+
+document.getElementById("btn-myself").onclick = function(e) {
+    changeYellow(true);
+    changeDarkBlue(false);
+    changeDarkGray(false);
+    changeLightBlue(false);
+    changeLightGray(false);
+    
+    redraw();
+}
+
+document.getElementById("btn-unconnected").onclick = function(e) {
+    changeYellow(false);
+    changeDarkBlue(true);
+    changeDarkGray(false);
+    changeLightBlue(true);
+    changeLightGray(false);
+    
+    redraw();
+}
+
+// change Color
+function changeYellow(toYellow) {
+    if (toYellow)
+        colors.yellow = "#ffe066"
+    else
+        colors.yellow = "#fff"
+}
+function changeLightBlue(toLightBlue) {
+    if (toLightBlue) {
+        colors.lightBlue = '#8b9dc3'
+        colors.veryDarkBlue = "#27385d"
+    }
+    else {
+        colors.lightBlue = "#fff"
+        colors.veryDarkBlue = "#fff"
+    }
+}
+function changeDarkBlue(toDarkBlue) {
+    if (toDarkBlue)
+        colors.darkBlue = '#3b5998'
+    else
+        colors.darkBlue = "#fff"
+}
+function changeDarkGray(toDarkGray) {
+    if (toDarkGray)
+        colors.darkGray = '#abafbd'
+    else
+        colors.darkGray = "#fff"
+}
+function changeLightGray(toLightGray) {
+    if (toLightGray)
+        colors.lightGray = '#dddfe6'
+    else
+        colors.lightGray = "#fff"
+}
+
+// visualization
+function redraw() {
+    q = d3.queue();
+    q.defer(d3.json, './data/setting.json')
+    q.defer(d3.csv, './data/friends.csv')
+    q.await(drawCircos)
+}
+function getNames() {
+    let arr = [];
+    for (let i = 0; i < 360; i++) {
+        arr[i] = faker.name.firstName()
+    }
+    return arr;
 }
 
 function svg2img(){
-    var svg = document.querySelector('svg');
-    var xml = new XMLSerializer().serializeToString(svg);
-    var svg64 = btoa(xml);
-    var b64start = 'data:image/svg+xml;base64,';
-    var image64 = b64start + svg64;
+    let svg = document.querySelector('svg');
+    let xml = new XMLSerializer().serializeToString(svg);
+    let svg64 = btoa(xml);
+    let b64start = 'data:image/svg+xml;base64,';
+    let image64 = b64start + svg64;
     return image64;
 };
 
 function colorVertex(d, layer) {
     if (d.isConnected != "true") {
-        return '#3b5998' // dark blue
+        return colors.darkBlue // dark blue
     } else {
         if (d.edge == layer)
-            return "#ffe066" // yellow
-        return '#abafbd' // dark gray
+            return colors.yellow // yellow !
+        return colors.darkGray // dark gray
     }
 }
 function colorEdge(d) {
     if (d.isConnected != "true") {
-        return '#8b9dc3' // light blue
+        return colors.lightBlue // light blue
     } else {
-        return '#dddfe6' // light gray
+        return colors.lightGray // light gray
     }
 }
 function tooltipVertex(id, layer) {
@@ -46,7 +160,7 @@ function tooltipEdge(degree) {
 }
 
 // draw stack graph
-var drawCircos = function (error, setting, friends) { // parameters from d3 queue
+let drawCircos = function (error, setting, friends) { // parameters from d3 queue
     
     // colored bands
     setting = setting
@@ -67,7 +181,7 @@ var drawCircos = function (error, setting, friends) { // parameters from d3 queu
         return {
             block_id: "f",
             position: parseInt(d.id) + 0.5,
-            value: faker.name.firstName()
+            value: names[ parseInt(d.id) ]
         }
     })
     // data for stacks
@@ -289,10 +403,11 @@ var drawCircos = function (error, setting, friends) { // parameters from d3 queu
         .line('bg', lineData, { 
             innerRadius: 0.817,
             outerRadius: 0.9,
+            color: 'transparent',
             backgrounds: [
               {
                 opacity: 0.9,
-                color: '#27385d' // very dark blue
+                color: colors.veryDarkBlue // very dark blue
               }
             ]
         })
@@ -321,7 +436,9 @@ var drawCircos = function (error, setting, friends) { // parameters from d3 queu
                 color: '#f7f7f7' // very light gray
               }
             ],
-            tooltipContent: null
+            tooltipContent: function() {
+                return "friendliness"
+            }
         })
         .text('text', textData, { 
             innerRadius: 0.91,
@@ -338,7 +455,6 @@ var drawCircos = function (error, setting, friends) { // parameters from d3 queu
         .render()
   }
 
-  d3.queue()
-  .defer(d3.json, './data/setting.json')
-  .defer(d3.csv, './data/friends.csv')
-  .await(drawCircos)
+q.defer(d3.json, './data/setting.json')
+q.defer(d3.csv, './data/friends.csv')
+q.await(drawCircos)
