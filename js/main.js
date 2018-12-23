@@ -1,3 +1,5 @@
+document.addEventListener("DOMContentLoaded", function(event) {
+
 let width = document.getElementById("chart").offsetWidth;
 let edgeThickness = 54, vertexThickness = 10;
 // global circle
@@ -453,8 +455,10 @@ let drawCircos = function (error, setting, friends) { // parameters from d3 queu
         
         // render
         .render()
-  }
+  }    
 
 q.defer(d3.json, './data/setting.json')
 q.defer(d3.csv, './data/friends.csv')
 q.await(drawCircos)
+
+});
